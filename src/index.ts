@@ -17,7 +17,8 @@ const breakCaptcha = async () => {
       key: API_KEY,
       googlekey: "6LdXo-ISAAAAAFkY4XibHMoIIFk-zIaJ5Gv9mcnQ",
       method: "userrecaptcha",
-      pageurl: "https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/ConsultarPlaca",
+      pageurl:
+        "https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/ConsultarPlaca",
     });
 
     captchaId = response.data.replace("OK|", "");
@@ -40,7 +41,10 @@ const breakCaptcha = async () => {
 
       const captchaResponse = captcha.data;
       if (captchaResponse.includes("OK|")) {
-        console.log("Resultado do captcha:", captchaResponse.replace("OK|", ""));
+        console.log(
+          "Resultado do captcha:",
+          captchaResponse.replace("OK|", "")
+        );
         return;
       } else {
         console.log("Tentativa", retry);
@@ -48,10 +52,12 @@ const breakCaptcha = async () => {
     } catch (error) {
       console.error("Erro na tentativa", retry, ":", error);
     }
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    await new Promise((resolve) => setTimeout(resolve, 5000));
   }
 
-  console.error("Todas as tentativas falharam. Não foi possível obter o resultado do captcha.");
+  console.error(
+    "Todas as tentativas falharam. Não foi possível obter o resultado do captcha."
+  );
 };
 
 breakCaptcha();
