@@ -23,41 +23,57 @@ const breakCaptcha = async () => {
 
     captchaId = response.data.replace("OK|", "");
     console.log("Resposta da API:", response.data);
+
+    const maxRetries = 5;
+    const timeoutMillis = 25000;
+
+    for (let retry = 1; retry <= maxRetries; retry++) {
+      try {
+        const captcha = await axios.get(
+          `http://2captcha.com/res.php?key=${API_KEY}&action=get&id=${captchaId}`,
+          {
+            timeout: timeoutMillis,
+          }
+        );
+
+        const captchaResponse = captcha.data;
+        if (captchaResponse.includes("OK|")) {
+          captchaResponse.replace("OK|", "");
+          return captchaResponse.replace("OK|", "");
+        } else {
+          console.log("Tentativa", retry);
+        }
+      } catch (error) {
+        console.error("Erro na tentativa", retry, ":", error);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 13000));
+    }
+
+    throw new Error(
+      "Todas as tentativas falharam. Não foi possível obter o resultado do captcha."
+    );
   } catch (error) {
     console.error("Erro ao enviar captcha:", error);
+    throw error;
   }
-
-  const maxRetries = 5;
-  const timeoutMillis = 25000;
-
-  for (let retry = 1; retry <= maxRetries; retry++) {
-    try {
-      const captcha = await axios.get(
-        `http://2captcha.com/res.php?key=${API_KEY}&action=get&id=${captchaId}`,
-        {
-          timeout: timeoutMillis,
-        }
-      );
-
-      const captchaResponse = captcha.data;
-      if (captchaResponse.includes("OK|")) {
-        console.log(
-          "Resultado do captcha:",
-          captchaResponse.replace("OK|", "")
-        );
-        return;
-      } else {
-        console.log("Tentativa", retry);
-      }
-    } catch (error) {
-      console.error("Erro na tentativa", retry, ":", error);
-    }
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-  }
-
-  console.error(
-    "Todas as tentativas falharam. Não foi possível obter o resultado do captcha."
-  );
 };
 
-breakCaptcha();
+export const bot = async () => {
+  try {
+    const captchaResponse = await breakCaptcha();
+
+    const response = await axios.post(
+      "https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/ConsultarPlaca",
+      {
+        Placa: "PFJ7699",
+        captcha: captchaResponse,
+      }
+    );
+
+    console.log("Resposta:", response.data);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+bot();
