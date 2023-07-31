@@ -1,13 +1,14 @@
 import axios from "axios";
 import { wrapper } from "axios-cookiejar-support";
-import { CookieJar } from "tough-cookie";
+// import { CookieJar } from "tough-cookie";
+import parse from "node-html-parser";
 
 const API_KEY = "1d293c30da707756b8d0ca1df2a4b8ef";
 
-const jar = new CookieJar();
-const client = axios.create({
-  jar,
-});
+// const jar = new CookieJar();
+// const client = axios.create({
+//   jar,
+// });
 
 const breakCaptcha = async () => {
   let captchaId = "";
@@ -70,7 +71,11 @@ export const bot = async () => {
       }
     );
 
-    console.log("Resposta:", response.data);
+    const root = parse(response.data);
+    const plate = root.querySelector("body > div.container.main-content.rounded > div.body-content > div > div > div > div > div > div > div > div.row > div > form > div:nth-child(2) > div:nth-child(1) > div > fieldset > div > div:nth-child(1) > div > div:nth-child(1) > p");
+
+    console.log("Placa:",plate?.textContent.trim());
+    
   } catch (error) {
     console.log(error);
   }
