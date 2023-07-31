@@ -1,14 +1,9 @@
 import axios from "axios";
 import { wrapper } from "axios-cookiejar-support";
-// import { CookieJar } from "tough-cookie";
+import { CookieJar } from "tough-cookie";
 import parse from "node-html-parser";
 
 const API_KEY = "1d293c30da707756b8d0ca1df2a4b8ef";
-
-// const jar = new CookieJar();
-// const client = axios.create({
-//   jar,
-// });
 
 const breakCaptcha = async () => {
   let captchaId = "";
@@ -59,11 +54,18 @@ const breakCaptcha = async () => {
   }
 };
 
+const jar = new CookieJar();
+const client = wrapper(
+    axios.create({
+        jar,
+    })
+);
+
 export const bot = async () => {
   try {
     const captchaResponse = await breakCaptcha();
 
-    const response = await axios.post(
+    await axios.post(
       "https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/ConsultarPlaca",
       {
         Placa: "PFJ7699",
@@ -71,10 +73,14 @@ export const bot = async () => {
       }
     );
 
-    const root = parse(response.data);
-    const plate = root.querySelector("body > div.container.main-content.rounded > div.body-content > div > div > div > div > div > div > div > div.row > div > form > div:nth-child(2) > div:nth-child(1) > div > fieldset > div > div:nth-child(1) > div > div:nth-child(1) > p");
+    const response = await client.get(
+        `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DetalhamentoDebitos/Detalhamento?Placa=PFJ7699&PlacaOutraUF=N`,
+    );
 
-    console.log("Placa:",plate?.textContent.trim());
+    const root = parse(response.data);
+    const plate = root.querySelector("#placa");
+
+    console.log("Teste ",plate);
     
   } catch (error) {
     console.log(error);
