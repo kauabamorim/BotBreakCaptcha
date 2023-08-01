@@ -73,20 +73,16 @@ export const bot = async () => {
     const response = await client.get(
       `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/DetalharDebito?placa=${plate}&PlacaOutraUF=N`,
       {
-        maxRedirects: 5,
+        headers: {
+            referer: "https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/ConsultarPlaca"
+        }
       }
     );
 
-    if (response.headers["set-cookie"]) {
-      const setCookieHeaders = response.headers["set-cookie"];
-      setCookieHeaders.forEach((header) => {
-        jar.setCookieSync(header, "https://online6.detran.pe.gov.br");
-      });
-    }
-
     const root = parse(response.data);
-    const plateInfo = root.querySelector("h2");
-    console.log(plateInfo?.textContent.trim());
+
+    const plateInfo = root.querySelector("#placa");
+    console.log("Placa:", plateInfo?.textContent.trim());
   } catch (error) {
     console.log(error);
   }
