@@ -56,7 +56,26 @@ const client = wrapper(
   })
 );
 
-const getLogin = async (plate: string) => {
+const getTicket = async (
+  debitId: string,
+  plate: string,
+  cpfEncrypted: string
+) => {
+  const ticket = await client.get(
+    `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/ImprimirGuiaDesdobramento?Placa=${plate}&CpfCnpj=${cpfEncrypted}&DebitosSelecionados=${debitId}`,
+    {
+      headers: {
+        referer: `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${plate}&CpfCnpj=${cpfEncrypted}`,
+      },
+    }
+  );
+};
+
+export const bot = async () => {
+  let plate = "PFJ7699";
+  let document = "24633879472";
+  let renavam = "00258896353";
+
   try {
     const captchaResponse = await breakCaptcha();
 
@@ -67,13 +86,7 @@ const getLogin = async (plate: string) => {
         captcha: captchaResponse,
       }
     );
-  } catch (error) {
-    console.log(error);
-  }
-};
 
-const getTickets = async (plate: string, document: string) => {
-  try {
     const debitsResponse = await client.get(
       `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/DetalharDebito?placa=${plate}&PlacaOutraUF=N`,
       {
@@ -87,7 +100,7 @@ const getTickets = async (plate: string, document: string) => {
     const root = parse(debitsResponse.data);
     const cpfEncryptedElement = root.querySelector("#hdfCpf");
     const cpfEncrypted = cpfEncryptedElement?.getAttribute("value") || "";
-    
+
     const getTickets = await client.get(
       `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${plate}&CpfCnpj=${cpfEncrypted}`,
       {
@@ -97,11 +110,11 @@ const getTickets = async (plate: string, document: string) => {
       }
     );
 
-    const teste = parse(getTickets.data);
-    const elements = teste.querySelectorAll('[id^="DebitoSelecionado_"]');
-    const ids = Array.from(elements).map((element) => element.id);
-    console.log(ids);
-
+    const pageTicket = parse(getTickets.data);
+    const elements = pageTicket.querySelectorAll('[id^="DebitoSelecionado_"]');
+    const ids = Array.from(elements).map((element) =>
+      element.id.replace("DebitoSelecionado_", "")
+    );
 
     await client.get(
       `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DetalhamentoDebitos/ValidarImpressaoDesdobramento?CpfCnpj=${document}&Placa=${plate}&CodRequerimento=0&`,
@@ -111,29 +124,7 @@ const getTickets = async (plate: string, document: string) => {
         },
       }
     );
-    
-  } catch (error) {
-    console.log(error);
-  }
-};
-export const bot = async () => {
-  let plate = "PFJ7699";
-  let document = "24633879472";
-  let renavam = "00258896353";
 
-  try {
-    getLogin(plate);
-    getTickets(plate, document);
-
-    // id selecionado funcao
-    // const boleto = await client.get(
-    //   `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/ImprimirGuiaDesdobramento?Placa=${plate}&CpfCnpj=${cpfEncrypted}&DebitosSelecionados=00090502000000_20752703_99`,
-    //   {
-    //     headers: {
-    //       referer: `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${plate}&CpfCnpj=${cpfEncrypted}`,
-    //     },
-    //   }
-    // );
   } catch (error) {
     console.log(error);
   }
