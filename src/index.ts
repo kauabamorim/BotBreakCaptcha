@@ -72,8 +72,8 @@ export const bot = async () => {
       }
     );
 
-    const debits = await client.get(
-      `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DetalhamentoDebitos/ValidarImpressaoDesdobramento?CpfCnpj=${document}&Placa=${plate}&CodRequerimento=0&`,
+    const debitsResponse = await client.get(
+      `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/DetalharDebito?placa=${plate}&PlacaOutraUF=N`,
       {
         headers: {
           referer:
@@ -82,15 +82,24 @@ export const bot = async () => {
       }
     );
 
-    const root = parse(debits.data);
-    const debitTypes = root.querySelector(
-      "body > div > div > div > div > div > div > div > div > div > div > div > form > div.row.p-0.m-0 > div:nth-child(1) > div > div.card-body.p-2"
+    const root = parse(debitsResponse.data);
+    const cpfEncryptedElement = root.querySelector("#hdfCpf");
+    const cpfEncrypted = cpfEncryptedElement?.getAttribute("value") || "";
+
+    const desdobramento = await client.get(
+      `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DetalhamentoDebitos/ValidarImpressaoDesdobramento?CpfCnpj=${document}&Placa=${plate}&CodRequerimento=0&`,
+      {
+        headers: {
+          referer:
+            `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DetalhamentoDebitos/Detalhamento?Placa=${plate}&PlacaOutraUF=N`,
+        },
+      }
     );
 
-    if (debitTypes) {
-      const cells = debitTypes.querySelectorAll("p");
-      console.log(cells[0].textContent.trim());
-    }
+    const elements = root.querySelectorAll('[id^="DebitoSelecionado_"]');
+    const ids = Array.from(elements).map((element) => element.id);
+    console.log(ids);
+
   } catch (error) {
     console.log(error);
   }
