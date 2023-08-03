@@ -72,62 +72,69 @@ const getTicket = async (
 };
 
 export const bot = async () => {
-  let plate = "PFJ7699";
-  let document = "24633879472";
-  let renavam = "00258896353";
-
-  try {
-    const captchaResponse = await breakCaptcha();
-
-    await client.post(
-      "https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/ConsultarPlaca",
-      {
-        Placa: plate,
-        captcha: captchaResponse,
+    let plate = "PFJ7699";
+    let document = "24633879472";
+    let renavam = "00258896353";
+  
+    try {
+      const captchaResponse = await breakCaptcha();
+  
+      await client.post(
+        "https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/ConsultarPlaca",
+        {
+          Placa: plate,
+          captcha: captchaResponse,
+        }
+      );
+  
+      const debitsResponse = await client.get(
+        `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/DetalharDebito?placa=${plate}&PlacaOutraUF=N`,
+        {
+          headers: {
+            referer:
+              "https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/ConsultarPlaca",
+          },
+        }
+      );
+  
+      const root = parse(debitsResponse.data);
+      const cpfEncryptedElement = root.querySelector("#hdfCpf");
+      const cpfEncrypted = cpfEncryptedElement?.getAttribute("value") || "";
+  
+      const getTickets = await client.get(
+        `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${plate}&CpfCnpj=${cpfEncrypted}`,
+        {
+          headers: {
+            referer: `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${plate}&CpfCnpj=${cpfEncrypted}`,
+          },
+        }
+      );
+  
+      const pageTicket = parse(getTickets.data);
+      const elements = pageTicket.querySelectorAll('[id^="DebitoSelecionado_"]');
+      const ids = Array.from(elements).map((element) =>
+        element.id.replace("DebitoSelecionado_", "")
+      );
+  
+      await client.get(
+        `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DetalhamentoDebitos/ValidarImpressaoDesdobramento?CpfCnpj=${document}&Placa=${plate}&CodRequerimento=0&`,
+        {
+          headers: {
+            referer: `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DetalhamentoDebitos/Detalhamento?Placa=${plate}&PlacaOutraUF=N`,
+          },
+        }
+      );
+  
+      for (const id of ids) {
+        await getTicket(id, plate, cpfEncrypted);
+        console.log([id]);
       }
-    );
-
-    const debitsResponse = await client.get(
-      `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/DetalharDebito?placa=${plate}&PlacaOutraUF=N`,
-      {
-        headers: {
-          referer:
-            "https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/ConsultarPlaca",
-        },
-      }
-    );
-
-    const root = parse(debitsResponse.data);
-    const cpfEncryptedElement = root.querySelector("#hdfCpf");
-    const cpfEncrypted = cpfEncryptedElement?.getAttribute("value") || "";
-
-    const getTickets = await client.get(
-      `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${plate}&CpfCnpj=${cpfEncrypted}`,
-      {
-        headers: {
-          referer: `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${plate}&CpfCnpj=${cpfEncrypted}`,
-        },
-      }
-    );
-
-    const pageTicket = parse(getTickets.data);
-    const elements = pageTicket.querySelectorAll('[id^="DebitoSelecionado_"]');
-    const ids = Array.from(elements).map((element) =>
-      element.id.replace("DebitoSelecionado_", "")
-    );
-
-    await client.get(
-      `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DetalhamentoDebitos/ValidarImpressaoDesdobramento?CpfCnpj=${document}&Placa=${plate}&CodRequerimento=0&`,
-      {
-        headers: {
-          referer: `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DetalhamentoDebitos/Detalhamento?Placa=${plate}&PlacaOutraUF=N`,
-        },
-      }
-    );
-
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-bot();
+  
+  
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  
+  bot();
+  
