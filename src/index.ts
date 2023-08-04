@@ -113,6 +113,7 @@ export const bot = async () => {
     );
 
     const pageTicket = parse(getTickets.data);
+    const paymentStatus = pageTicket.querySelectorAll('[strong^="Situação: "]');
     const elements = pageTicket.querySelectorAll('[id^="DebitoSelecionado_"]');
     const ids = Array.from(elements).map((element) =>
       element.id.replace("DebitoSelecionado_", "")
@@ -132,6 +133,9 @@ export const bot = async () => {
     for (const id of ids) {
       const ticketData = await getTicket(id, plate, cpfEncrypted);
 
+      const renavam = ticketData.querySelector(
+        "#informacoes > tbody > tr:nth-child(3) > td.col-xs-10 > div:nth-child(2) > label"
+      );
       const barcode = ticketData.querySelector(
         "#informacoes > tbody > tr:nth-child(1) > td > div.col-xs-7.borda-esquerda > label"
       );
@@ -159,6 +163,8 @@ export const bot = async () => {
       }
 
       const ticketInformation = {
+        plate: plate,
+        renavam: renavam?.textContent.trim(),
         DebitoID: id,
         Type: type,
         Descricao: description?.textContent.trim(),
