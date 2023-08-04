@@ -69,72 +69,104 @@ const getTicket = async (
       },
     }
   );
+
+  const ticketData = parse(ticket.data);
+  return ticketData;
 };
 
 export const bot = async () => {
-    let plate = "PFJ7699";
-    let document = "24633879472";
-    let renavam = "00258896353";
-  
-    try {
-      const captchaResponse = await breakCaptcha();
-  
-      await client.post(
-        "https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/ConsultarPlaca",
-        {
-          Placa: plate,
-          captcha: captchaResponse,
-        }
-      );
-  
-      const debitsResponse = await client.get(
-        `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/DetalharDebito?placa=${plate}&PlacaOutraUF=N`,
-        {
-          headers: {
-            referer:
-              "https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/ConsultarPlaca",
-          },
-        }
-      );
-  
-      const root = parse(debitsResponse.data);
-      const cpfEncryptedElement = root.querySelector("#hdfCpf");
-      const cpfEncrypted = cpfEncryptedElement?.getAttribute("value") || "";
-  
-      const getTickets = await client.get(
-        `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${plate}&CpfCnpj=${cpfEncrypted}`,
-        {
-          headers: {
-            referer: `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${plate}&CpfCnpj=${cpfEncrypted}`,
-          },
-        }
-      );
-  
-      const pageTicket = parse(getTickets.data);
-      const elements = pageTicket.querySelectorAll('[id^="DebitoSelecionado_"]');
-      const ids = Array.from(elements).map((element) =>
-        element.id.replace("DebitoSelecionado_", "")
-      );
-  
-      await client.get(
-        `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DetalhamentoDebitos/ValidarImpressaoDesdobramento?CpfCnpj=${document}&Placa=${plate}&CodRequerimento=0&`,
-        {
-          headers: {
-            referer: `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DetalhamentoDebitos/Detalhamento?Placa=${plate}&PlacaOutraUF=N`,
-          },
-        }
-      );
-  
-      for (const id of ids) {
-        await getTicket(id, plate, cpfEncrypted);
-        console.log([id]);
+  let plate = "PFJ7699";
+  let document = "24633879472";
+  let renavam = "00258896353";
+
+  try {
+    const captchaResponse = await breakCaptcha();
+
+    await client.post(
+      "https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/ConsultarPlaca",
+      {
+        Placa: plate,
+        captcha: captchaResponse,
       }
-  
-  
-    } catch (error) {
-      console.log(error);
+    );
+
+    const debitsResponse = await client.get(
+      `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/DetalharDebito?placa=${plate}&PlacaOutraUF=N`,
+      {
+        headers: {
+          referer:
+            "https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/ConsultarPlaca",
+        },
+      }
+    );
+
+    const root = parse(debitsResponse.data);
+    const cpfEncryptedElement = root.querySelector("#hdfCpf");
+    const cpfEncrypted = cpfEncryptedElement?.getAttribute("value") || "";
+
+    const getTickets = await client.get(
+      `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${plate}&CpfCnpj=${cpfEncrypted}`,
+      {
+        headers: {
+          referer: `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${plate}&CpfCnpj=${cpfEncrypted}`,
+        },
+      }
+    );
+
+    const pageTicket = parse(getTickets.data);
+    const elements = pageTicket.querySelectorAll('[id^="DebitoSelecionado_"]');
+    const ids = Array.from(elements).map((element) =>
+      element.id.replace("DebitoSelecionado_", "")
+    );
+
+    await client.get(
+      `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DetalhamentoDebitos/ValidarImpressaoDesdobramento?CpfCnpj=${document}&Placa=${plate}&CodRequerimento=0&`,
+      {
+        headers: {
+          referer: `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DetalhamentoDebitos/Detalhamento?Placa=${plate}&PlacaOutraUF=N`,
+        },
+      }
+    );
+
+    const ticketInformations = [];
+
+    for (const id of ids) {
+      const ticketData = await getTicket(id, plate, cpfEncrypted);
+      const barcode = ticketData.querySelector(
+        "#informacoes > tbody > tr:nth-child(1) > td > div.col-xs-7.borda-esquerda > label"
+      );
+      const subtotal = ticketData.querySelector(
+        "#informacoes > tbody > tr:nth-child(10) > td.col-xs-2 > label"
+      );
+      const description = ticketData.querySelector(
+        "#informacoes > tbody > tr:nth-child(6) > td.col-xs-10 > div:nth-child(1) > label"
+      );
+
+      let type = "";
+      if (description && description.textContent.includes("INFRACAO")) {
+        type = "Type 3";
+      } else if (description && description.textContent.includes("IPVA")) {
+        type = "Type 2";
+      } else if (description && description.textContent.includes("LICENCIAMENTO")) {
+        type = "Type 1";
+      }
+
+      const ticketInformation = {
+        DebitoID: id,
+        Descricao: description?.textContent.trim(),
+        Subtotal: Number(subtotal?.textContent.trim().replace(/,/, "")),
+        Barcode: barcode?.textContent.trim(),
+        Type: type,
+      };
+
+      ticketInformations.push(ticketInformation);
     }
-  };
-  
-  bot();
-  
+
+    console.log(ticketInformations);
+
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+bot();
