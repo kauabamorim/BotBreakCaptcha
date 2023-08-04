@@ -33,7 +33,6 @@ const breakCaptcha = async () => {
 
         const captchaResponse = captcha.data;
         if (captchaResponse.includes("OK|")) {
-          captchaResponse.replace("OK|", "");
           return captchaResponse.replace("OK|", "");
         } else {
           console.log("Tentativa");
@@ -132,6 +131,7 @@ export const bot = async () => {
 
     for (const id of ids) {
       const ticketData = await getTicket(id, plate, cpfEncrypted);
+
       const barcode = ticketData.querySelector(
         "#informacoes > tbody > tr:nth-child(1) > td > div.col-xs-7.borda-esquerda > label"
       );
@@ -142,28 +142,35 @@ export const bot = async () => {
         "#informacoes > tbody > tr:nth-child(6) > td.col-xs-10 > div:nth-child(1) > label"
       );
 
+      const dueDate = ticketData.querySelector(
+        "#informacoes > tbody > tr:nth-child(2) > td.col-xs-2 > label"
+      );
+
       let type = "";
       if (description && description.textContent.includes("INFRACAO")) {
         type = "Type 3";
       } else if (description && description.textContent.includes("IPVA")) {
         type = "Type 2";
-      } else if (description && description.textContent.includes("LICENCIAMENTO")) {
+      } else if (
+        description &&
+        description.textContent.includes("LICENCIAMENTO")
+      ) {
         type = "Type 1";
       }
 
       const ticketInformation = {
         DebitoID: id,
+        Type: type,
         Descricao: description?.textContent.trim(),
         Subtotal: Number(subtotal?.textContent.trim().replace(/,/, "")),
         Barcode: barcode?.textContent.trim(),
-        Type: type,
+        dueDate: dueDate?.textContent.trim(),
       };
 
       ticketInformations.push(ticketInformation);
     }
 
     console.log(ticketInformations);
-
   } catch (error) {
     console.log(error);
   }
