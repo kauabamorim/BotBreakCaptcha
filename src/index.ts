@@ -34,8 +34,6 @@ const breakCaptcha = async () => {
         const captchaResponse = captcha.data;
         if (captchaResponse.includes("OK|")) {
           return captchaResponse.replace("OK|", "");
-        } else {
-          console.log("Tentativa");
         }
       } catch (error) {
         console.error("Erro ao tentar obter o resultado do captcha:", error);
@@ -73,20 +71,23 @@ const getTicket = async (
       );
 
       const ticketResponse = ticket.data;
-      if (ticketResponse.includes("Erro:")) {
-        console.log("Tentativa:", i + 1, "Gerando Boleto Novamente");
-      } else {
-        const ticketData = parse(ticketResponse);
+      const ticketData = parse(ticketResponse);
+
+      const barcodeSelector = "#informacoes > tbody > tr:nth-child(1) > td > div.col-xs-7.borda-esquerda > label";
+      const barcode = ticketData.querySelector(barcodeSelector);
+
+      if (barcode) {
         return ticketData;
+      } else {
+        console.log("Tentativa:", i + 1, "Barcode não encontrado, tentando novamente...");
       }
     } catch (error) {
       console.error("Tentativa:", i + 1, "Erro:", error);
     }
   }
 
-  throw new Error(`Não foi possível gerar o boleto após ${retryCount} tentativas.`);
+  throw new Error(`Não foi possível gerar o boleto com o barcode após ${retryCount} tentativas.`);
 };
-
 
 export const bot = async () => {
   let plate = "PFJ7699";
