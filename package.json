@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "detranpe:start": "ts-node -e \"require('./src/index.ts').handler({clientId: 1, debitTypeId: 6, debitType: 'detranPE', document: '24633879472', plate: 'PFJ7699', registryId: '00258896353'})\"",
     "start": "ts-node src/index.ts"
   },
   "keywords": [],

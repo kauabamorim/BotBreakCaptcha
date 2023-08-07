@@ -92,7 +92,7 @@ const getTicket = async (
 export const bot = async () => {
   let plate = "PFJ7699";
   let document = "24633879472";
-  let renavam = "00258896353";
+  let registryId = "00258896353";
 
   try {
     const captchaResponse = await breakCaptcha();
@@ -130,6 +130,7 @@ export const bot = async () => {
 
     const pageTicket = parse(getTickets.data);
     const paymentStatus = pageTicket.querySelectorAll('[strong^="Situação: "]');
+   
     const elements = pageTicket.querySelectorAll('[id^="DebitoSelecionado_"]');
     const ids = Array.from(elements).map((element) =>
       element.id.replace("DebitoSelecionado_", "")
