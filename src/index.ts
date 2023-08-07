@@ -58,20 +58,35 @@ const client = wrapper(
 const getTicket = async (
   debitId: string,
   plate: string,
-  cpfEncrypted: string
+  cpfEncrypted: string,
+  retryCount = 6
 ) => {
-  const ticket = await client.get(
-    `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/ImprimirGuiaDesdobramento?Placa=${plate}&CpfCnpj=${cpfEncrypted}&DebitosSelecionados=${debitId}`,
-    {
-      headers: {
-        referer: `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${plate}&CpfCnpj=${cpfEncrypted}`,
-      },
-    }
-  );
+  for (let i = 0; i < retryCount; i++) {
+    try {
+      const ticket = await client.get(
+        `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/ImprimirGuiaDesdobramento?Placa=${plate}&CpfCnpj=${cpfEncrypted}&DebitosSelecionados=${debitId}`,
+        {
+          headers: {
+            referer: `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${plate}&CpfCnpj=${cpfEncrypted}`,
+          },
+        }
+      );
 
-  const ticketData = parse(ticket.data);
-  return ticketData;
+      const ticketResponse = ticket.data;
+      if (ticketResponse.includes("Erro:")) {
+        console.log("Tentativa:", i + 1, "Gerando Boleto Novamente");
+      } else {
+        const ticketData = parse(ticketResponse);
+        return ticketData;
+      }
+    } catch (error) {
+      console.error("Tentativa:", i + 1, "Erro:", error);
+    }
+  }
+
+  throw new Error(`Não foi possível gerar o boleto após ${retryCount} tentativas.`);
 };
+
 
 export const bot = async () => {
   let plate = "PFJ7699";
