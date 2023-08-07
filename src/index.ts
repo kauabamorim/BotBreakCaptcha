@@ -127,10 +127,10 @@ export const bot = async () => {
     const cpfEncrypted = cpfEncryptedElement?.getAttribute("value") || "";
 
     const getTickets = await client.get(
-      `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${licensePlate}&CpfCnpj=${cpfEncrypted}`,
+      `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${licensePlate}&CpfCnpj=${cpfEncrypted}`,
       {
         headers: {
-          referer: `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${licensePlate}&CpfCnpj=${cpfEncrypted}`,
+          referer: `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${licensePlate}&CpfCnpj=${cpfEncrypted}`,
         },
       }
     );
@@ -163,7 +163,7 @@ export const bot = async () => {
         "#informacoes > tbody > tr:nth-child(1) > td > div.col-xs-7.borda-esquerda > label"
       );
       const subtotal = ticketData.querySelector(
-        "#informacoes > tbody > tr:nth-child(10) > td.col-xs-2 > label"
+        "#informacoes > tbody > tr:nth-child(6) > td.col-xs-10 > div:nth-child(2) > label"
       );
       const total = ticketData.querySelector(
         "#informacoes > tbody > tr:nth-child(10) > td.col-xs-2 > label"
