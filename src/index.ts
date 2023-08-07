@@ -136,11 +136,16 @@ export const bot = async () => {
     );
 
     const pageTicket = parse(getTickets.data);
-    const paymentStatus = pageTicket.querySelectorAll('[strong^="Situação: "]');
     const elements = pageTicket.querySelectorAll('[id^="DebitoSelecionado_"]');
     const ids = Array.from(elements).map((element) =>
       element.id.replace("DebitoSelecionado_", "")
     );
+
+    const paymentStatus = pageTicket.querySelector(
+      "body > div > div > div > div > div > div > div > div > div > div > div > form > div.row.p-0.m-0 > div:nth-child(3) > div > div.card-body.p-2 > div.row > div.col-5 > div > p:nth-child(2)"
+    );
+    const status = paymentStatus?.textContent.trim().replace("Situação:", "") || "";
+
 
     await client.get(
       `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DetalhamentoDebitos/ValidarImpressaoDesdobramento?CpfCnpj=${document}&Placa=${licensePlate}&CodRequerimento=0&`,
@@ -187,16 +192,17 @@ export const bot = async () => {
       ) {
         type = "Type 1";
       }
-      
+
       const ticketInformation = {
-        plate: licensePlate,
-        renavam: renavam?.textContent.trim(),
+        Plate: licensePlate,
+        Renavam: renavam?.textContent.trim(),
+        PaymentStatus: status,
         Type: type,
         Description: description?.textContent.trim(),
         Subtotal: Number(subtotal?.textContent.trim().replace(/,/, "")),
-        total: Number(total?.textContent.trim().replace(/,/, "")),
+        Total: Number(total?.textContent.trim().replace(/,/, "")),
         Barcode: barcode?.textContent.trim(),
-        dueDate: dueDate?.textContent.trim(),
+        DueDate: dueDate?.textContent.trim(),
       };
 
       ticketInformations.push(ticketInformation);
