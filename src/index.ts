@@ -141,12 +141,6 @@ export const bot = async () => {
       element.id.replace("DebitoSelecionado_", "")
     );
 
-    const paymentStatus = pageTicket.querySelector(
-      "body > div > div > div > div > div > div > div > div > div > div > div > form > div.row.p-0.m-0 > div:nth-child(3) > div > div.card-body.p-2 > div.row > div.col-5 > div > p:nth-child(2)"
-    );
-    const status = paymentStatus?.textContent.trim().replace("Situação:", "") || "";
-
-
     await client.get(
       `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DetalhamentoDebitos/ValidarImpressaoDesdobramento?CpfCnpj=${document}&Placa=${licensePlate}&CodRequerimento=0&`,
       {
@@ -160,6 +154,14 @@ export const bot = async () => {
 
     for (const id of ids) {
       const ticketData = await getTicket(id, licensePlate, cpfEncrypted);
+      const paymentStatus = pageTicket.querySelector(
+        `body > div > div > div > div > div > div > div > div > div > div > div > form > div.row.p-0.m-0 > div:nth-child(${
+          ids.indexOf(id) + 1
+        }) > div > div.card-body.p-2 > div.row > div.col-5 > div > p:nth-child(2)`
+      );
+
+      const status =
+        paymentStatus?.textContent.trim().replace("Situação:", "") || "";
 
       const renavam = ticketData.querySelector(
         "#informacoes > tbody > tr:nth-child(3) > td.col-xs-10 > div:nth-child(2) > label"
@@ -204,10 +206,8 @@ export const bot = async () => {
         Barcode: barcode?.textContent.trim(),
         DueDate: dueDate?.textContent.trim(),
       };
-
       ticketInformations.push(ticketInformation);
     }
-
     console.log(ticketInformations);
   } catch (error) {
     console.log(error);
