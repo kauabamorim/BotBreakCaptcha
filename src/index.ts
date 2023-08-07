@@ -73,24 +73,31 @@ const getTicket = async (
       const ticketResponse = ticket.data;
       const ticketData = parse(ticketResponse);
 
-      const barcodeSelector = "#informacoes > tbody > tr:nth-child(1) > td > div.col-xs-7.borda-esquerda > label";
+      const barcodeSelector =
+        "#informacoes > tbody > tr:nth-child(1) > td > div.col-xs-7.borda-esquerda > label";
       const barcode = ticketData.querySelector(barcodeSelector);
 
       if (barcode) {
         return ticketData;
       } else {
-        console.log("Tentativa:", i + 1, "Barcode não encontrado, tentando novamente...");
+        console.log(
+          "Tentativa:",
+          i + 1,
+          "Barcode não encontrado, tentando novamente..."
+        );
       }
     } catch (error) {
       console.error("Tentativa:", i + 1, "Erro:", error);
     }
   }
 
-  throw new Error(`Não foi possível gerar o boleto com o barcode após ${retryCount} tentativas.`);
+  throw new Error(
+    `Não foi possível gerar o boleto com o barcode após ${retryCount} tentativas.`
+  );
 };
 
 export const bot = async () => {
-  let plate = "PFJ7699";
+  let licensePlate = "PFJ7699";
   let document = "24633879472";
   let registryId = "00258896353";
 
@@ -100,13 +107,13 @@ export const bot = async () => {
     await client.post(
       "https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/ConsultarPlaca",
       {
-        Placa: plate,
+        Placa: licensePlate,
         captcha: captchaResponse,
       }
     );
 
     const debitsResponse = await client.get(
-      `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/DetalharDebito?placa=${plate}&PlacaOutraUF=N`,
+      `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/ConsultaPlaca/DetalharDebito?placa=${licensePlate}&PlacaOutraUF=N`,
       {
         headers: {
           referer:
@@ -120,27 +127,26 @@ export const bot = async () => {
     const cpfEncrypted = cpfEncryptedElement?.getAttribute("value") || "";
 
     const getTickets = await client.get(
-      `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${plate}&CpfCnpj=${cpfEncrypted}`,
+      `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${licensePlate}&CpfCnpj=${cpfEncrypted}`,
       {
         headers: {
-          referer: `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${plate}&CpfCnpj=${cpfEncrypted}`,
+          referer: `https://online5.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DesdobramentoDebitos/Desdobramento?Placa=${licensePlate}&CpfCnpj=${cpfEncrypted}`,
         },
       }
     );
 
     const pageTicket = parse(getTickets.data);
     const paymentStatus = pageTicket.querySelectorAll('[strong^="Situação: "]');
-   
     const elements = pageTicket.querySelectorAll('[id^="DebitoSelecionado_"]');
     const ids = Array.from(elements).map((element) =>
       element.id.replace("DebitoSelecionado_", "")
     );
 
     await client.get(
-      `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DetalhamentoDebitos/ValidarImpressaoDesdobramento?CpfCnpj=${document}&Placa=${plate}&CodRequerimento=0&`,
+      `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DetalhamentoDebitos/ValidarImpressaoDesdobramento?CpfCnpj=${document}&Placa=${licensePlate}&CodRequerimento=0&`,
       {
         headers: {
-          referer: `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DetalhamentoDebitos/Detalhamento?Placa=${plate}&PlacaOutraUF=N`,
+          referer: `https://online6.detran.pe.gov.br/ServicosWeb/VeiculoMVC/DetalhamentoDebitos/Detalhamento?Placa=${licensePlate}&PlacaOutraUF=N`,
         },
       }
     );
@@ -148,7 +154,7 @@ export const bot = async () => {
     const ticketInformations = [];
 
     for (const id of ids) {
-      const ticketData = await getTicket(id, plate, cpfEncrypted);
+      const ticketData = await getTicket(id, licensePlate, cpfEncrypted);
 
       const renavam = ticketData.querySelector(
         "#informacoes > tbody > tr:nth-child(3) > td.col-xs-10 > div:nth-child(2) > label"
@@ -157,6 +163,9 @@ export const bot = async () => {
         "#informacoes > tbody > tr:nth-child(1) > td > div.col-xs-7.borda-esquerda > label"
       );
       const subtotal = ticketData.querySelector(
+        "#informacoes > tbody > tr:nth-child(10) > td.col-xs-2 > label"
+      );
+      const total = ticketData.querySelector(
         "#informacoes > tbody > tr:nth-child(10) > td.col-xs-2 > label"
       );
       const description = ticketData.querySelector(
@@ -178,14 +187,14 @@ export const bot = async () => {
       ) {
         type = "Type 1";
       }
-
+      
       const ticketInformation = {
-        plate: plate,
+        plate: licensePlate,
         renavam: renavam?.textContent.trim(),
-        DebitoID: id,
         Type: type,
-        Descricao: description?.textContent.trim(),
+        Description: description?.textContent.trim(),
         Subtotal: Number(subtotal?.textContent.trim().replace(/,/, "")),
+        total: Number(total?.textContent.trim().replace(/,/, "")),
         Barcode: barcode?.textContent.trim(),
         dueDate: dueDate?.textContent.trim(),
       };
