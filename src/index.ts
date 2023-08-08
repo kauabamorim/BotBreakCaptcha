@@ -19,31 +19,37 @@ const breakCaptcha = async () => {
 
     captchaId = response.data.replace("OK|", "");
     console.log("Resposta da API:", response.data);
-
-    const timeoutMillis = 25000;
-
-    while (true) {
-      try {
-        const captcha = await axios.get(
-          `http://2captcha.com/res.php?key=${API_KEY}&action=get&id=${captchaId}`,
-          {
-            timeout: timeoutMillis,
-          }
-        );
-
-        const captchaResponse = captcha.data;
-        if (captchaResponse.includes("OK|")) {
-          return captchaResponse.replace("OK|", "");
-        }
-      } catch (error) {
-        console.error("Erro ao tentar obter o resultado do captcha:", error);
-      }
-      await new Promise((resolve) => setTimeout(resolve, 12000));
-    }
   } catch (error) {
     console.error("Erro ao enviar captcha:", error);
-    throw error;
   }
+
+  const maxRetries = 5;
+  const timeoutMillis = 25000;
+
+  for (let retry = 1; retry <= maxRetries; retry++) {
+    try {
+      const captcha = await axios.get(
+        `http://2captcha.com/res.php?key=${API_KEY}&action=get&id=${captchaId}`,
+        {
+          timeout: timeoutMillis,
+        }
+      );
+
+      const captchaResponse = captcha.data;
+      if (captchaResponse.includes("OK|")) {
+        return captchaResponse.replace("OK|", "");
+      } else {
+        console.log("Tentativa", retry);
+      }
+    } catch (error) {
+      console.error("Erro na tentativa", retry, ":", error);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 30000));
+  }
+
+  console.error(
+    "Todas as tentativas falharam. Não foi possível obter o resultado do captcha."
+  );
 };
 
 const jar = new CookieJar();
