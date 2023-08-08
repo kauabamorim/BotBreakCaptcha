@@ -2,6 +2,7 @@ import axios from "axios";
 import { wrapper } from "axios-cookiejar-support";
 import { CookieJar } from "tough-cookie";
 import parse from "node-html-parser";
+import { onlyNumbers } from "./utils";
 
 const API_KEY = "1d293c30da707756b8d0ca1df2a4b8ef";
 
@@ -80,7 +81,7 @@ const getTicket = async (
       const ticketData = parse(ticketResponse);
 
       const barcodeSelector =
-        "#informacoes > tbody > tr:nth-child(1) > td > div.col-xs-7.borda-esquerda > label";
+        "label.linha-digitavel";
       const barcode = ticketData.querySelector(barcodeSelector);
 
       if (barcode) {
@@ -156,7 +157,7 @@ export async function bot(data: any) {
 
     const ticketInformations = [];
 
-    for (const id of ids) {
+    for (const id of ids.slice(0,2)) {
       const ticketData = await getTicket(id, licensePlate, cpfEncrypted);
       const paymentStatus = pageTicket.querySelector(
         `body > div > div > div > div > div > div > div > div > div > div > div > form > div.row.p-0.m-0 > div:nth-child(${
@@ -171,7 +172,7 @@ export async function bot(data: any) {
         "#informacoes > tbody > tr:nth-child(3) > td.col-xs-10 > div:nth-child(2) > label"
       );
       const barcode = ticketData.querySelector(
-        "#informacoes > tbody > tr:nth-child(1) > td > div.col-xs-7.borda-esquerda > label"
+        "label.linha-digitavel"
       );
       const subtotal = ticketData.querySelector(
         "#informacoes > tbody > tr:nth-child(6) > td.col-xs-10 > div:nth-child(2) > label"
