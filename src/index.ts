@@ -96,10 +96,8 @@ const getTicket = async (
   );
 };
 
-export const bot = async () => {
-  let licensePlate = "PFJ7699";
-  let document = "24633879472";
-  let registryId = "00258896353";
+export async function bot(data: any) {
+  const { document, licensePlate, registryId } = data;
 
   try {
     const captchaResponse = await breakCaptcha();
@@ -212,6 +210,6 @@ export const bot = async () => {
   } catch (error) {
     console.log(error);
   }
-};
+}
 
-bot();
+console.log(bot);
